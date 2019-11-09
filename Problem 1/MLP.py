@@ -28,11 +28,12 @@ class Node:
             self.hidden_node = True
 
 class NeuralNet:
-    num_layers = 2
-    num_nodes = [1, 1]
-    activation_function = "relu"
-    learning_rate = 0.3
+    num_layers = None
+    num_nodes = None
+    activation_function = None
+    learning_rate = None
     weights = None
+    outputs = None
 
     def __init__(self, num_layers, num_nodes, activation_function, learning_rate):
         self.num_layers = num_layers
@@ -40,13 +41,29 @@ class NeuralNet:
         self.activation_function = activation_function
         self.learning_rate = learning_rate
         self.weights = [None] * (num_layers - 1)
+        self.outputs = [None] * (num_layers)
 
         for layer in range(num_layers - 1):
             # self.weights[layer][0] = np.empty((num_nodes[layer + 1], 1))
-            self.weights[layer] = [None] * (num_nodes[layer])
-            for node in range(num_nodes[layer]):
-                self.weights[layer][node] = np.random.normal(loc=0, scale=1, size=(num_nodes[layer + 1] + 1, 1))
+            self.weights[layer] = [None] * (num_nodes[layer + 1])
+            for node in range(num_nodes[layer + 1]):
+                self.weights[layer][node] = np.random.normal(loc=0, scale=1, size=(num_nodes[layer] + 1, 1))
                 self.weights[layer][node][-1] = 0
+
+        for output in range(len(self.outputs)):
+            # self.outputs[output] = [None] * num_nodes[output]
+            self.outputs[output] = np.empty((num_nodes[output], 1))
+    def forward_phase(self, input):
+        # output = input
+        # self.outputs[0] = np.concatenate((input, np.ones((1,))))
+        self.outputs[0] = input.reshape((-1, 1))
+        for layer in range(1, self.num_layers):
+            for node in range(self.num_nodes[layer]):
+
+                # output = np.dot(self.weights[layer - 1][node], np.transpose(self.outputs[layer - 1]))
+                output = np.dot(np.transpose(self.outputs[layer - 1]), self.weights[layer - 1][node])
+                self.outputs[layer][node] = output
+            self.outputs[layer] = np.concatenate((self.outputs[layer], np.ones((1, 1))))
 
     def fit(self, X, Y, batch_size, epochs):
         pass
@@ -100,3 +117,5 @@ class Softmax:
 
 if __name__ == '__main__':
     neuralNet = NeuralNet(5, [6, 2, 3, 4, 5], 'relu', 0.3)
+    input = np.asarray([8, 5, 2, 3, 1, 7, 1])
+    neuralNet.forward_phase(input)
