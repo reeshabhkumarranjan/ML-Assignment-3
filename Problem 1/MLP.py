@@ -1,17 +1,52 @@
 import numpy as np
 
+class Weight:
+    value = 0
+
+    def getValue(self):
+        return self.value
+
+    def setValue(self):
+        return self.value
+
+class Node:
+    layer_number = 0
+    input_node = False
+    output_node = False
+    hidden_node = False
+    activation_function = "relu"
+    back_connections = None
+    forward_connections = None
+
+    def __init__(self, layer_number, position, activation_function):
+        self.layer_number = layer_number
+        if position == 'i':
+            self.input_node = True
+        elif position == 'o':
+            self.output_node = True
+        else:
+            self.hidden_node = True
 
 class NeuralNet:
     num_layers = 2
     num_nodes = [1, 1]
     activation_function = "relu"
     learning_rate = 0.3
+    weights = None
 
     def __init__(self, num_layers, num_nodes, activation_function, learning_rate):
         self.num_layers = num_layers
         self.num_nodes = num_nodes
         self.activation_function = activation_function
         self.learning_rate = learning_rate
+        self.weights = [None] * (num_layers - 1)
+
+        for layer in range(num_layers - 1):
+            # self.weights[layer][0] = np.empty((num_nodes[layer + 1], 1))
+            self.weights[layer] = [None] * (num_nodes[layer])
+            for node in range(num_nodes[layer]):
+                self.weights[layer][node] = np.random.normal(loc=0, scale=1, size=(num_nodes[layer + 1] + 1, 1))
+                self.weights[layer][node][-1] = 0
 
     def fit(self, X, Y, batch_size, epochs):
         pass
@@ -62,3 +97,6 @@ class Softmax:
 
     def grad(self, X):
         return np.multiply(self.value(X), 1 - self.value(X))
+
+if __name__ == '__main__':
+    neuralNet = NeuralNet(5, [6, 2, 3, 4, 5], 'relu', 0.3)
