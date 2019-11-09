@@ -34,6 +34,7 @@ class NeuralNet:
     learning_rate = None
     weights = None
     outputs = None
+    outputs_derivative = None
 
     def __init__(self, num_layers, num_nodes, activation_function, learning_rate):
         self.num_layers = num_layers
@@ -42,6 +43,7 @@ class NeuralNet:
         self.learning_rate = learning_rate
         self.weights = [None] * (num_layers - 1)
         self.outputs = [None] * (num_layers)
+        self.outputs_derivative = [None] * (num_layers)
 
         for layer in range(num_layers - 1):
             # self.weights[layer][0] = np.empty((num_nodes[layer + 1], 1))
@@ -53,17 +55,33 @@ class NeuralNet:
         for output in range(len(self.outputs)):
             # self.outputs[output] = [None] * num_nodes[output]
             self.outputs[output] = np.empty((num_nodes[output], 1))
+            # self.outputs_derivative = np.empty((num_nodes[output], 1))
     def forward_phase(self, input):
         # output = input
         # self.outputs[0] = np.concatenate((input, np.ones((1,))))
+        self.outputs[0] = input
+        input = input.reshape(-1, 1)
+        # input = np.concatenate((input, np.ones((1, 1))))
         self.outputs[0] = input.reshape((-1, 1))
         for layer in range(1, self.num_layers):
             for node in range(self.num_nodes[layer]):
 
                 # output = np.dot(self.weights[layer - 1][node], np.transpose(self.outputs[layer - 1]))
-                output = np.dot(np.transpose(self.outputs[layer - 1]), self.weights[layer - 1][node])
+                input = np.concatenate((self.outputs[layer - 1], np.ones((1, 1))))
+                output = np.dot(np.transpose(input), self.weights[layer - 1][node])
+                output = Relu().value(output)
                 self.outputs[layer][node] = output
-            self.outputs[layer] = np.concatenate((self.outputs[layer], np.ones((1, 1))))
+            # self.outputs[layer] = np.concatenate((self.outputs[layer], np.ones((1, 1))))
+            # self.outputs[layer] = o
+            self.outputs_derivative[layer] = Relu().grad(self.outputs[layer])
+
+    def backward_phase(self, d, layer=0):
+
+        if layer == self.num_layers - 1:
+            for node in self.num_nodes[layer]:
+                error_signal = d[node] - Relu().value()(self.outputs[layer][node])
+                phi_dash = Relu().grad(self.outputs[layer][node])
+
 
     def fit(self, X, Y, batch_size, epochs):
         pass
@@ -77,10 +95,10 @@ class NeuralNet:
 
 class Relu:
     def value(self, x):
-        return max(0, x)
+        return x.clip(min=0)
 
     def grad(self, x):
-        return 0 if x < 0 else 1
+        return (np.sign(x) + 1) // 2
 
 
 class Sigmoid:
@@ -117,5 +135,5 @@ class Softmax:
 
 if __name__ == '__main__':
     neuralNet = NeuralNet(5, [6, 2, 3, 4, 5], 'relu', 0.3)
-    input = np.asarray([8, 5, 2, 3, 1, 7, 1])
+    input = np.asarray([8, 5, 2, 3, 1, 7])
     neuralNet.forward_phase(input)
