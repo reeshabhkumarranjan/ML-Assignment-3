@@ -35,6 +35,7 @@ class NeuralNet:
     weights = None
     outputs = None
     outputs_derivative = None
+    deltas = None
 
     def __init__(self, num_layers, num_nodes, activation_function, learning_rate):
         self.num_layers = num_layers
@@ -44,10 +45,12 @@ class NeuralNet:
         self.weights = [None] * (num_layers - 1)
         self.outputs = [None] * (num_layers)
         self.outputs_derivative = [None] * (num_layers)
+        self.deltas = [None] (num_layers)
 
         for layer in range(num_layers - 1):
             # self.weights[layer][0] = np.empty((num_nodes[layer + 1], 1))
             self.weights[layer] = [None] * (num_nodes[layer + 1])
+            self.deltas[layer] =
             for node in range(num_nodes[layer + 1]):
                 self.weights[layer][node] = np.random.normal(loc=0, scale=1, size=(num_nodes[layer] + 1, 1))
                 self.weights[layer][node][-1] = 0
@@ -55,6 +58,7 @@ class NeuralNet:
         for output in range(len(self.outputs)):
             # self.outputs[output] = [None] * num_nodes[output]
             self.outputs[output] = np.empty((num_nodes[output], 1))
+            self.deltas[output] = np.empty((num_nodes[output], 1))
             # self.outputs_derivative = np.empty((num_nodes[output], 1))
     def forward_phase(self, input):
         # output = input
@@ -80,8 +84,21 @@ class NeuralNet:
         if layer == self.num_layers - 1:
             for node in self.num_nodes[layer]:
                 error_signal = d[node] - Relu().value()(self.outputs[layer][node])
-                phi_dash = Relu().grad(self.outputs[layer][node])
+                phi_dash = self.outputs_derivative[layer][node]
+                delta = error_signal * phi_dash
+                self.deltas[layer][node] = delta
+                return
 
+        for node in self.num_nodes[layer]:
+            delta_sum = 0
+            for next_node in self.num_nodes[layer + 1]:
+                self.backward_phase(layer = layer + 1)
+                delta_sum += self.deltas[layer + 1][next_node]
+            phi_dash = self.outputs_derivative[layer][node]
+            delta = delta_sum * phi_dash
+            self.deltas[layer][node] = delta
+
+            # adjust weights
 
     def fit(self, X, Y, batch_size, epochs):
         pass
