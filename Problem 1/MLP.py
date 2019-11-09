@@ -50,7 +50,7 @@ class NeuralNet:
         for layer in range(num_layers - 1):
             # self.weights[layer][0] = np.empty((num_nodes[layer + 1], 1))
             self.weights[layer] = [None] * (num_nodes[layer + 1])
-            self.deltas[layer] =
+            # self.deltas[layer] =
             for node in range(num_nodes[layer + 1]):
                 self.weights[layer][node] = np.random.normal(loc=0, scale=1, size=(num_nodes[layer] + 1, 1))
                 self.weights[layer][node][-1] = 0
