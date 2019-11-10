@@ -10,6 +10,7 @@ class NeuralNet:
 	outputs = None
 	outputs_derivative = None
 	deltas = None
+	biases = None
 
 	def __init__(self, num_layers, num_nodes, activation_function, learning_rate):
 		self.num_layers = num_layers  # number of layers including input and output
@@ -25,13 +26,13 @@ class NeuralNet:
 		# it stores the derivative of output of all the layers, where the derivative is phi'(v)
 		self.deltas = [None] * (num_layers)  # it is a list of numpy arrays.
 		# it stores delta values corresponding to each node in a given later.
+		self.biases = [None] * (num_layers)
 
+		# initialise the weights
 		for layer in range(num_layers - 1):
-			self.weights[layer] = [None] * (num_nodes[layer + 1])
-			for node in range(num_nodes[layer + 1]):
-				self.weights[layer][node] = np.random.normal(loc=0, scale=1, size=(num_nodes[layer] + 1, 1))
-				self.weights[layer][node][-1] = 0
-
+			self.weights[layer] = np.random.normal(loc=0, scale=1, size=(self.num_nodes[layer], self.num_nodes[layer + 1]))
+			self.biases[layer] = np.zeros((self.num_nodes[layer + 1], 1))
+		# initialize the outputs, deltas to empty
 		for output in range(len(self.outputs)):
 			self.outputs[output] = np.empty((num_nodes[output], 1))
 			self.deltas[output] = np.empty((num_nodes[output], 1))
@@ -39,14 +40,10 @@ class NeuralNet:
 	def forward_phase(self, input):
 		input = input.reshape(-1, 1)
 		self.outputs[0] = input
-		self.outputs_derivative[0] = Relu().grad(self.outputs[0])
 		for layer in range(1, self.num_layers):
-			for node in range(self.num_nodes[layer]):
-				input = np.concatenate((self.outputs[layer - 1], np.ones((1, 1))))
-				output = np.dot(np.transpose(input), self.weights[layer - 1][node])
-				output = Relu().value(output)
-				self.outputs[layer][node] = output
-			self.outputs_derivative[layer] = Relu().grad(self.outputs[layer])
+			output = np.dot(np.transpose(self.weights[layer - 1]), self.outputs[layer - 1]) + self.biases[layer - 1]
+			output = Relu.value(output)
+			self.outputs[layer] = output
 
 	def backward_phase(self, d, layer=0):
 		"""Call it with layer = 0"""
@@ -148,5 +145,5 @@ if __name__ == '__main__':
 	neuralNet = NeuralNet(5, [6, 2, 3, 4, 5], 'relu', 0.3)
 	input = np.asarray([8, 5, 2, 3, 1, 7])
 	neuralNet.forward_phase(input)
-	d = np.asarray([4, 2, 3, 1, 2])
-	neuralNet.backward_phase(d=d)
+	# d = np.asarray([4, 2, 3, 1, 2])
+	# neuralNet.backward_phase(d=d)
