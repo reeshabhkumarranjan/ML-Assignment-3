@@ -90,8 +90,8 @@ class NeuralNet:
 					d[i, 0] = 1 if i == y[row, 0] else 0
 				self.forward_phase(input)
 				self.backward_phase(d)
-				print(np.concatenate((self.get_train_outputs(), d), axis=1))
-				# print(self.cross_entropy_loss(self.get_train_outputs(), d))
+				# print(np.concatenate((self.get_train_outputs(), d), axis=1))
+				print(self.cross_entropy_loss(self.get_train_outputs(), d))
 
 	def predict(self, X):
 		self.forward_phase(X)
@@ -176,6 +176,11 @@ if __name__ == '__main__':
 
 	training_set = np.zeros((training_image_set.shape[0], training_image_set.shape[1] ** 2))
 	test_set = np.zeros((test_image_set.shape[0], test_image_set.shape[1] ** 2))
+
+	for i in range(training_image_set.shape[0]):
+		training_set[i, :] = training_image_set[i].flatten()
+	for i in range(test_image_set.shape[0]):
+		test_set[i, :] = test_image_set[i].flatten()
 
 	x = training_set[:100, :]
 	y = training_y[:100, :]
