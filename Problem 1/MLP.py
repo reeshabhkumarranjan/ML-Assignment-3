@@ -70,6 +70,7 @@ class NeuralNet:
         # self.outputs[0] = np.concatenate((input, np.ones((1,))))
         input = input.reshape(-1, 1)
         self.outputs[0] = input
+        self.outputs_derivative[0] = Relu().grad(self.outputs[0])
         # input = np.concatenate((input, np.ones((1, 1))))
         # self.outputs[0] = input.reshape((-1, 1))
         for layer in range(1, self.num_layers):
@@ -88,32 +89,32 @@ class NeuralNet:
         """Call it with layer = 1"""
 
         if layer == self.num_layers - 2:
-            for node in self.num_nodes[layer + 1]:
+            for node in range(self.num_nodes[layer + 1]):
                 error_signal = d[node] - self.outputs[layer + 1][node]
                 phi_dash = self.outputs_derivative[layer + 1][node] # TODO is this correct?
                 delta = error_signal * phi_dash
                 self.deltas[layer + 1][node] = delta
                 # adjust weights connecting to this node
-                for previous_node in self.num_nodes[layer]:
+                for previous_node in range(self.num_nodes[layer]):
                     # w_delta = self.learning_rate * self.deltas[layer + 1][node][previous_node]
                     w_delta = self.learning_rate * self.deltas[layer + 1][node] * self.outputs[layer][previous_node]
                     self.weights[layer][node][previous_node] -= w_delta
                 return
 
         # first make sure that the delta values for the next layer are availabke
-        self.backward_phase(layer=layer + 1)
+        self.backward_phase(d=d, layer=layer + 1)
 
         # now start adjusting the weights emerging from every node in the current layer
-        for node in self.num_nodes[layer]:
+        for node in range(self.num_nodes[layer]):
 
             # calculate the delta sum using the delta values of nodes in the next layer
             delta_sum = 0
-            for next_node in self.num_nodes[layer + 1]:
+            for next_node in range(self.num_nodes[layer + 1]):
                 delta_sum += self.deltas[layer + 1][next_node] * self.weights[layer][next_node][node]
             phi_dash = self.outputs_derivative[layer][node]
             delta = delta_sum * phi_dash
             self.deltas[layer][node] = delta
-            for next_node in self.num_nodes[layer + 1]:
+            for next_node in range(self.num_nodes[layer + 1]):
                 w_delta = self.learning_rate * self.deltas[layer + 1][next_node] * self.outputs[layer][node]
                 self.weights[layer][next_node][node] -= w_delta
         return
@@ -186,3 +187,5 @@ if __name__ == '__main__':
     neuralNet = NeuralNet(5, [6, 2, 3, 4, 5], 'relu', 0.3)
     input = np.asarray([8, 5, 2, 3, 1, 7])
     neuralNet.forward_phase(input)
+    d = np.asarray([4, 2, 3, 1, 2])
+    neuralNet.backward_phase(d=d)
