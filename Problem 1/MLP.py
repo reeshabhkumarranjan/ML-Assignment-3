@@ -1,32 +1,5 @@
 import numpy as np
 
-class Weight:
-    value = 0
-
-    def getValue(self):
-        return self.value
-
-    def setValue(self):
-        return self.value
-
-class Node:
-    layer_number = 0
-    input_node = False
-    output_node = False
-    hidden_node = False
-    activation_function = "relu"
-    back_connections = None
-    forward_connections = None
-
-    def __init__(self, layer_number, position, activation_function):
-        self.layer_number = layer_number
-        if position == 'i':
-            self.input_node = True
-        elif position == 'o':
-            self.output_node = True
-        else:
-            self.hidden_node = True
-
 class NeuralNet:
     num_layers = None
     num_nodes = None
@@ -53,36 +26,24 @@ class NeuralNet:
         # it stores delta values corresponding to each node in a given later.
 
         for layer in range(num_layers - 1):
-            # self.weights[layer][0] = np.empty((num_nodes[layer + 1], 1))
             self.weights[layer] = [None] * (num_nodes[layer + 1])
-            # self.deltas[layer] =
             for node in range(num_nodes[layer + 1]):
                 self.weights[layer][node] = np.random.normal(loc=0, scale=1, size=(num_nodes[layer] + 1, 1))
                 self.weights[layer][node][-1] = 0
 
         for output in range(len(self.outputs)):
-            # self.outputs[output] = [None] * num_nodes[output]
             self.outputs[output] = np.empty((num_nodes[output], 1))
             self.deltas[output] = np.empty((num_nodes[output], 1))
-            # self.outputs_derivative = np.empty((num_nodes[output], 1))
     def forward_phase(self, input):
-        # output = input
-        # self.outputs[0] = np.concatenate((input, np.ones((1,))))
         input = input.reshape(-1, 1)
         self.outputs[0] = input
         self.outputs_derivative[0] = Relu().grad(self.outputs[0])
-        # input = np.concatenate((input, np.ones((1, 1))))
-        # self.outputs[0] = input.reshape((-1, 1))
         for layer in range(1, self.num_layers):
             for node in range(self.num_nodes[layer]):
-
-                # output = np.dot(self.weights[layer - 1][node], np.transpose(self.outputs[layer - 1]))
                 input = np.concatenate((self.outputs[layer - 1], np.ones((1, 1))))
                 output = np.dot(np.transpose(input), self.weights[layer - 1][node])
                 output = Relu().value(output)
                 self.outputs[layer][node] = output
-            # self.outputs[layer] = np.concatenate((self.outputs[layer], np.ones((1, 1))))
-            # self.outputs[layer] = o
             self.outputs_derivative[layer] = Relu().grad(self.outputs[layer])
 
     def backward_phase(self, d, layer=0):
@@ -94,9 +55,10 @@ class NeuralNet:
                 phi_dash = self.outputs_derivative[layer + 1][node] # TODO is this correct?
                 delta = error_signal * phi_dash
                 self.deltas[layer + 1][node] = delta
+
                 # adjust weights connecting to this node
+
                 for previous_node in range(self.num_nodes[layer]):
-                    # w_delta = self.learning_rate * self.deltas[layer + 1][node][previous_node]
                     w_delta = self.learning_rate * self.deltas[layer + 1][node] * self.outputs[layer][previous_node]
                     self.weights[layer][node][previous_node] -= w_delta
                 return
@@ -118,20 +80,6 @@ class NeuralNet:
                 w_delta = self.learning_rate * self.deltas[layer + 1][next_node] * self.outputs[layer][node]
                 self.weights[layer][next_node][node] -= w_delta
         return
-
-        # for next_node in self.num_nodes[layer + 1]:
-        #     delta_sum = 0
-        #     self.backward_phase(layer=layer + 1)
-        #     phi_dash = self.outputs_derivative[layer + 1][next_node]
-        #     for prev_node in self.num_nodes[layer]:
-        #         delta_sum += self.deltas[layer + 1][next_node] * self.weights[layer][next_node][prev_node]
-        #     delta = delta_sum * phi_dash
-        #     self.deltas[layer][next_node] = delta
-        #     # adjust weights connecting to this node
-        #     for previous_node in self.num_nodes[layer - 1]:
-        #         w_delta = self.learning_rate * delta * self.deltas[layer - 1][next_node][previous_node]
-        #         self.deltas[layer - 1][next_node][previous_node] -= w_delta
-        # return
 
     def fit(self, X, Y, batch_size, epochs):
         pass
