@@ -1,3 +1,4 @@
+import idx2numpy as idx2numpy
 import numpy as np
 
 
@@ -11,8 +12,10 @@ class NeuralNet:
 	outputs_derivative = None
 	deltas = None
 	biases = None
+	num_labels = None
+	num_inputs = None
 
-	def __init__(self, num_layers, num_nodes, activation_function, learning_rate):
+	def __init__(self, num_layers, num_nodes, activation_function, learning_rate, num_labels, num_inputs):
 		self.num_layers = num_layers  # number of layers including input and output
 		self.num_nodes = num_nodes  # list of number of nodes in each layer
 		self.activation_function = activation_function  # activation function to be used (string)
@@ -27,6 +30,8 @@ class NeuralNet:
 		self.deltas = [None] * (num_layers)  # it is a list of numpy arrays.
 		# it stores delta values corresponding to each node in a given later.
 		self.biases = [None] * (num_layers)
+		self.num_labels = num_labels
+		self.num_inputs = num_inputs
 
 		# initialise the weights
 		for layer in range(num_layers - 1):
@@ -43,11 +48,12 @@ class NeuralNet:
 	def forward_phase(self, input):
 		input = input.reshape(-1, 1)
 		self.outputs[0] = input
+		self.outputs_derivative[0] = Relu.value(input)
 		for layer in range(1, self.num_layers):
 			output = np.dot(np.transpose(self.weights[layer - 1]), self.outputs[layer - 1]) + self.biases[layer]
 			if layer == self.num_layers - 1:
 				output = Softmax.value(output)
-				self.outputs_derivative = Softmax.grad(output)
+				self.outputs_derivative[-1] = Softmax.grad(output)
 			else:
 				output = Relu.value(output)
 				self.outputs_derivative[layer] = Relu.grad(output)
@@ -74,13 +80,23 @@ class NeuralNet:
 		# 	self.biases[layer] -= self.learning_rate * np.multiply(np.sum(self.deltas[layer + 1]) * np.ones((self.num_nodes[layer], 1)), self.outputs[layer])
 
 
-	def fit(self, X, Y, batch_size, epochs):
-		pass
+	def fit(self, x, y, batch_size, epochs):
+		for epoch in range(epochs):
+			print("Running epoch " + str(epoch) + "...")
+			for row in range(x.shape[0]):
+				input = x[row, :]
+				d = np.zeros((num_labels, 1))
+				for i in range(num_labels):
+					d[i, 0] = 1 if i == y[i, 0] else 0
+				self.forward_phase(input)
+				self.backward_phase(d)
 
 	def predict(self, X):
-		pass
+		self.forward_phase(X)
+		return self.outputs[-1]
 
-	def score(self, X, Y):
+	def score(self, x_test, y_test):
+		y_pred = self.predict(x_test)
 		pass
 
 
@@ -136,8 +152,26 @@ class Softmax:
 
 
 if __name__ == '__main__':
-	neuralNet = NeuralNet(5, [6, 2, 3, 4, 5], 'relu', 0.3)
-	input = np.asarray([8, 5, 2, 3, 1, 7])
-	neuralNet.forward_phase(input)
-	d = np.asarray([4, 2, 3, 1, 2])
-	neuralNet.backward_phase(d=d)
+	# neuralNet = NeuralNet(5, [6, 2, 3, 4, 5], 'relu', 0.3)
+	# input = np.asarray([8, 5, 2, 3, 1, 7])
+	# neuralNet.forward_phase(input)
+	# d = np.asarray([4, 2, 3, 1, 2])
+	# neuralNet.backward_phase(d=d)
+	training_image_set = idx2numpy.convert_from_file('images/train-images.idx3-ubyte')
+	training_label_set = idx2numpy.convert_from_file('images/train-labels.idx1-ubyte')
+	test_image_set = idx2numpy.convert_from_file('images/t10k-images.idx3-ubyte')
+	test_label_set = idx2numpy.convert_from_file('images/t10k-labels.idx1-ubyte')
+
+	training_y = np.transpose(np.asmatrix(training_label_set))
+	test_y = np.transpose(np.asmatrix(test_label_set))
+
+	training_set = np.zeros((training_image_set.shape[0], training_image_set.shape[1] ** 2))
+	test_set = np.zeros((test_image_set.shape[0], test_image_set.shape[1] ** 2))
+
+	x = training_set[:100, :]
+	y = training_y[:100, :]
+	num_inputs = x.shape[1]
+	num_labels = 10
+
+	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.3, num_labels, num_inputs)
+	neuralNet.fit(x, y, 0, 50)
