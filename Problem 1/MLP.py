@@ -35,7 +35,7 @@ class NeuralNet:
 
 		# initialise the weights
 		for layer in range(num_layers - 1):
-			self.weights[layer] = np.random.normal(loc=0, scale=1, size=(self.num_nodes[layer], self.num_nodes[layer + 1]))
+			self.weights[layer] = 0.01 * np.random.normal(loc=0, scale=1, size=(self.num_nodes[layer], self.num_nodes[layer + 1]))
 
 		# initialise the bias for each node
 		for layer in range(num_layers):
@@ -126,7 +126,8 @@ class Sigmoid:
 
 	@staticmethod
 	def grad(self, x):
-		return self.value(x) * (1 - self.value(x))
+		# print(Relu.value(x))
+		return np.multiply(Relu.value(x), (1 - Relu.value(x)))
 
 
 class Linear:
