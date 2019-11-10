@@ -60,13 +60,14 @@ class NeuralNet:
 		# calculate deltas for the output layer
 		self.deltas[-1] = np.multiply(self.outputs_derivative[-1], d - self.outputs[-1])
 
-		# calculate deltas for previous layers
+		# calculate deltas for previous layers and update weights
 		for layer in range(self.num_layers - 2, -1, -1):
+			self.weights[layer] += self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
 			self.deltas[layer] = np.multiply(np.dot(self.weights[layer], self.deltas[layer + 1]), self.outputs_derivative[layer])
 
 		# update weights for all the layers
-		for layer in range(self.num_layers - 1):
-			self.weights[layer] += self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
+		# for layer in range(self.num_layers - 1):
+		# 	pass
 
 		# update bias for all the layers
 		# for layer in range(self.num_layers):
