@@ -87,9 +87,11 @@ class NeuralNet:
 				input = x[row, :]
 				d = np.zeros((num_labels, 1))
 				for i in range(num_labels):
-					d[i, 0] = 1 if i == y[i, 0] else 0
+					d[i, 0] = 1 if i == y[row, 0] else 0
 				self.forward_phase(input)
 				self.backward_phase(d)
+				print(np.concatenate((self.get_train_outputs(), d), axis=1))
+				# print(self.cross_entropy_loss(self.get_train_outputs(), d))
 
 	def predict(self, X):
 		self.forward_phase(X)
@@ -97,7 +99,14 @@ class NeuralNet:
 
 	def score(self, x_test, y_test):
 		y_pred = self.predict(x_test)
-		pass
+		return self.cross_entropy_loss(y_pred, y_test)
+
+	@staticmethod
+	def cross_entropy_loss(y_pred, y_act):
+		return -(np.sum(np.dot(np.transpose(y_act), np.log(y_pred))) + np.sum(np.dot(np.transpose(1 - y_act), np.log(1 - y_pred))))
+
+	def get_train_outputs(self):
+		return self.outputs[-1]
 
 
 class Relu:
