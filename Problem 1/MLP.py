@@ -38,14 +38,19 @@ class NeuralNet:
     deltas = None
 
     def __init__(self, num_layers, num_nodes, activation_function, learning_rate):
-        self.num_layers = num_layers
-        self.num_nodes = num_nodes
-        self.activation_function = activation_function
-        self.learning_rate = learning_rate
-        self.weights = [None] * (num_layers - 1)
-        self.outputs = [None] * (num_layers)
-        self.outputs_derivative = [None] * (num_layers)
-        self.deltas = [None] (num_layers)
+        self.num_layers = num_layers # number of layers including input and output
+        self.num_nodes = num_nodes # list of number of nodes in each layer
+        self.activation_function = activation_function # activation function to be used (string)
+        self.learning_rate = learning_rate # learning rate
+        self.weights = [None] * (num_layers - 1) # it is a list of list of numpy arrays
+        # the [i][j] index of the data-structure corresponds to weight to the jth node in the
+        # (i + 1)th layer from all the nodes in the ith layer.
+        self.outputs = [None] * (num_layers) # it is a list of numpy arrays
+        # it store the output of all the layers, where output is the phi(v)
+        self.outputs_derivative = [None] * (num_layers) # it is a list of numpy arrays
+        # it stores the derivative of output of all the layers, where the derivative is phi'(v)
+        self.deltas = [None] (num_layers) # it is a list of numpy arrays.
+        # it stores delta values corresponding to each node in a given later.
 
         for layer in range(num_layers - 1):
             # self.weights[layer][0] = np.empty((num_nodes[layer + 1], 1))
@@ -79,7 +84,8 @@ class NeuralNet:
             # self.outputs[layer] = o
             self.outputs_derivative[layer] = Relu().grad(self.outputs[layer])
 
-    def backward_phase(self, d, layer=0):
+    def backward_phase(self, d, layer=1):
+        """Call it with layer = 1"""
 
         if layer == self.num_layers - 1:
             for node in self.num_nodes[layer]:
@@ -87,18 +93,22 @@ class NeuralNet:
                 phi_dash = self.outputs_derivative[layer][node]
                 delta = error_signal * phi_dash
                 self.deltas[layer][node] = delta
+                # adjust weights connecting to this node
                 return
 
         for node in self.num_nodes[layer]:
             delta_sum = 0
+            self.backward_phase(layer = layer + 1)
             for next_node in self.num_nodes[layer + 1]:
-                self.backward_phase(layer = layer + 1)
-                delta_sum += self.deltas[layer + 1][next_node]
+                delta_sum += self.deltas[layer + 1][next_node] * self.weights[layer][next_node][node]
             phi_dash = self.outputs_derivative[layer][node]
             delta = delta_sum * phi_dash
             self.deltas[layer][node] = delta
-
-            # adjust weights
+            # adjust weights connecting to this node
+            for previous_node in self.num_nodes[layer - 1]:
+                w_delta = self.learning_rate * delta * self.deltas[layer - 1][node][previous_node]
+                self.deltas[layer - 1][node][previous_node] -= w_delta
+        return
 
     def fit(self, X, Y, batch_size, epochs):
         pass
