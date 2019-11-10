@@ -49,7 +49,7 @@ class NeuralNet:
 			self.outputs_derivative[layer] = Relu().grad(self.outputs[layer])
 
 	def backward_phase(self, d, layer=0):
-		"""Call it with layer = 1"""
+		"""Call it with layer = 0"""
 
 		if layer == self.num_layers - 2:
 			for node in range(self.num_nodes[layer + 1]):
