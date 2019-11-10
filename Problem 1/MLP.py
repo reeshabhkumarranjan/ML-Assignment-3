@@ -66,7 +66,7 @@ class NeuralNet:
 
 		# update weights for all the layers
 		for layer in range(self.num_layers - 1):
-			self.weights[layer] -= self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
+			self.weights[layer] += self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
 
 		# update bias for all the layers
 		# for layer in range(self.num_layers):
