@@ -35,7 +35,7 @@ class NeuralNet:
 
 		# initialise the weights
 		for layer in range(num_layers - 1):
-			self.weights[layer] = 0.01 * np.random.normal(loc=0, scale=1, size=(self.num_nodes[layer], self.num_nodes[layer + 1]))
+			self.weights[layer] = 0.001 * np.random.normal(loc=0, scale=1, size=(self.num_nodes[layer], self.num_nodes[layer + 1]))
 
 		# initialise the bias for each node
 		for layer in range(num_layers):
@@ -64,20 +64,19 @@ class NeuralNet:
 
 		d = d.reshape(-1, 1)
 		# calculate deltas for the output layer
-		self.deltas[-1] = np.multiply(self.outputs_derivative[-1], d - self.outputs[-1])
+		self.deltas[-1] = np.multiply(self.outputs_derivative[-1], (d - self.outputs[-1]))
+
+		#calculate bias for output layer
+		self.biases[-1] -= self.learning_rate * self.deltas[-1]
+		# print(self.deltas[-1])
+		# print()
 
 		# calculate deltas for previous layers and update weights
 		for layer in range(self.num_layers - 2, -1, -1):
-			self.weights[layer] += self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
+			weights_delta = self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
+			self.weights[layer] += weights_delta
 			self.deltas[layer] = np.multiply(np.dot(self.weights[layer], self.deltas[layer + 1]), self.outputs_derivative[layer])
-
-		# update weights for all the layers
-		# for layer in range(self.num_layers - 1):
-		# 	pass
-
-		# update bias for all the layers
-		# for layer in range(self.num_layers):
-		# 	self.biases[layer] -= self.learning_rate * np.multiply(np.sum(self.deltas[layer + 1]) * np.ones((self.num_nodes[layer], 1)), self.outputs[layer])
+			self.biases[layer] += self.learning_rate * self.deltas[layer]
 
 
 	def fit(self, x, y, batch_size, epochs):
@@ -91,6 +90,7 @@ class NeuralNet:
 				self.forward_phase(input)
 				self.backward_phase(d)
 				# print(np.concatenate((self.get_train_outputs(), d), axis=1))
+				# print()
 				print(self.cross_entropy_loss(self.get_train_outputs(), d))
 
 	def predict(self, X):
@@ -127,7 +127,7 @@ class Sigmoid:
 	@staticmethod
 	def grad(self, x):
 		# print(Relu.value(x))
-		return np.multiply(Relu.value(x), (1 - Relu.value(x)))
+		return np.multiply(Sigmoid.value(x), (1 - Sigmoid.value(x)))
 
 
 class Linear:
@@ -153,12 +153,13 @@ class Tanh:
 class Softmax:
 	@staticmethod
 	def value(X):
-		exp_vals = np.exp(X)
-		return exp_vals / (np.sum(exp_vals))
+		exp_vals = np.exp(X - np.max(X))
+		return exp_vals / (np.sum(exp_vals, axis=0))
 
 	@staticmethod
 	def grad(X):
-		return np.multiply(Softmax.value(X), 1 - Softmax.value(X))
+		return np.multiply(Softmax.value(X), 1 - Softmax.value(X)) / 10
+		# return X / 10
 
 
 if __name__ == '__main__':
@@ -188,5 +189,14 @@ if __name__ == '__main__':
 	num_inputs = x.shape[1]
 	num_labels = 10
 
-	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.3, num_labels, num_inputs)
+	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.1, num_labels, num_inputs)
 	neuralNet.fit(x, y, 0, 50)
+
+	# _x = np.asarray([1, 5, 2, 3, 5, 1]).reshape(-1, 1)
+	# _y = np.asarray([0, 1, 0, 0]).reshape(-1, 1)
+	# neuralNet = NeuralNet(5, [6, 3, 4, 3, 4], 'relu', 10000000, 4, 6)
+	# for i in range(3):
+	# 	# print(neuralNet.weights[0])
+	# 	print()
+	# 	neuralNet.forward_phase(_x)
+	# 	neuralNet.backward_phase(_y)
