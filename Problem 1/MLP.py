@@ -57,7 +57,7 @@ class NeuralNet:
 	def forward_phase(self, input):
 		input = input.reshape(-1, 1)
 		self.outputs[0] = input
-		self.outputs_derivative[0] = Relu.value(input)
+		self.outputs_derivative[0] = Relu.grad(input)
 		for layer in range(1, self.num_layers):
 			output = np.dot(np.transpose(self.weights[layer - 1]), self.outputs[layer - 1]) + self.biases[layer]
 			if layer == self.num_layers - 1:
@@ -68,57 +68,67 @@ class NeuralNet:
 				self.outputs_derivative[layer] = Relu.grad(output)
 			self.outputs[layer] = output
 
-	def update_weights(self):
+	def update_weights(self, batch_size):
 		for layer in range(self.num_layers -1):
-			self.weights[layer] += self.weight_deltas[layer]
+			self.weights[layer] += self.weight_deltas[layer] / batch_size
 
-	def backward_phase(self, d, update_weights=False, batch_size=1):
+	def backward_phase(self, d, update_weights, batch_size):
 		"""Call it with layer = 0"""
 
 		d = d.reshape(-1, 1)
 		# calculate deltas for the output layer
 		# self.deltas[-1] = np.multiply(self.outputs_derivative[-1], (d - self.outputs[-1]) / self.outputs[-1].shape[0])
-		self.deltas[-1] = -(d - self.outputs[-1]) / self.outputs[-1].shape[0] # TODO remove this
+		self.deltas[-1] = (d - self.outputs[-1]) / 10 #* self.outputs_derivative[-1] #/ self.outputs[-1].shape[0] # TODO remove this
 		#calculate bias for output layer
-		self.biases[-1] -= self.learning_rate * self.deltas[-1]
+		self.biases[-1] += self.learning_rate * self.deltas[-1]
 		# print(self.deltas[-1])
 		# print()
 
-		if update_weights:
-			self.update_weights()
+		# if update_weights:
+		# 	self.update_weights(batch_size=batch_size)
+		# 	self.reset_weight_deltas()
 			# self.weights -= self.weight_deltas / batch_size
-		self.reset_weight_deltas()
 
 		# calculate deltas for previous layers and update weights
 		for layer in range(self.num_layers - 2, -1, -1):
 			weight_delta = self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
-			self.deltas[layer] = -np.multiply(np.dot(self.weights[layer], self.deltas[layer + 1]), self.outputs_derivative[layer])
+			self.deltas[layer] = np.multiply(np.dot(self.weights[layer], self.deltas[layer + 1]), self.outputs_derivative[layer])
 			self.weight_deltas[layer] += weight_delta
 			# self.weights[layer] -= weights_delta
-			# self.biases[layer] -= self.learning_rate * self.deltas[layer]
-			self.biases[layer] += self.learning_rate * np.sum(self.deltas[layer],axis=0,keepdims=True) # TODO remove this
+			self.biases[layer] += self.learning_rate * self.deltas[layer]
+			# self.biases[layer] += self.learning_rate * np.sum(self.deltas[layer],axis=0,keepdims=True) # TODO remove this
 
 
 	def fit(self, x, y, batch_size, epochs):
 		for epoch in range(epochs):
+			score_epoch = 0
 			print("Running epoch " + str(epoch) + "...")
-			batch_iter = 1
+			batch_iter = 0
 			for row in range(x.shape[0]):
+				batch_iter += 1
 				input = x[row, :]
 				d = np.zeros((num_labels, 1))
 				for i in range(num_labels):
 					d[i, 0] = 1 if i == y[row, 0] else 0
+				# print(d)
+				# print(y[row, 0])
+				# print(input)
 				self.forward_phase(input)
-				if row == x.shape[0] - 1:
-					print(self.cross_entropy_loss(self.get_train_outputs(), d))
-					print(np.concatenate((self.get_train_outputs(), d), axis=1))
-					print()
+				score_epoch += self.cross_entropy_loss(self.get_train_outputs(), d)
+				# if row == x.shape[0] - 1:
+				# 	print(self.cross_entropy_loss(self.get_train_outputs(), d))
+				# 	print(np.concatenate((self.get_train_outputs(), d), axis=1))
+				# 	print()
 				update_weights = False
-				if batch_iter == batch_size:
-					update_weights = True
-					batch_iter = 1
 				self.backward_phase(d, update_weights=update_weights, batch_size=batch_size)
+				if batch_iter == batch_size:
+					self.update_weights(batch_size)
+					self.reset_weight_deltas()
+					update_weights = True
+					batch_iter = 0
+				update_weights = True
 				# print()
+			print(score_epoch)
 
 	def predict(self, X):
 		self.forward_phase(X)
@@ -129,7 +139,19 @@ class NeuralNet:
 		return self.cross_entropy_loss(y_pred, y_test)
 
 	def cross_entropy_loss(self, y_pred, y_act):
-		return -(np.sum(np.dot(np.transpose(y_act), np.log(y_pred))) + np.sum(np.dot(np.transpose(1.0 - y_act), np.log(1.0 - y_pred))))
+		#TODO asdfghjkl
+		error = 0
+		for i in range(y_pred.shape[0]):
+			# print("y_pred[i, 0] =", y_pred[i, 0])
+			# print("y_act[i, 0] = ", y_act[i, 0])
+			if y_act[i, 0] == 1:
+				# print("if")
+				error -= np.log(y_pred[i, 0])
+			else:
+				# print("else")
+				error -= np.log(1 - y_pred[i, 0])
+		return error
+		# return -(np.sum(np.dot(np.transpose(y_act), np.log(y_pred))) + np.sum(np.dot(np.transpose(1.0 - y_act), np.log(1.0 - y_pred))))
 
 	def get_train_outputs(self):
 		return self.outputs[-1]
@@ -138,13 +160,22 @@ class NeuralNet:
 class Relu:
 	@staticmethod
 	def value(x):
-		return x.clip(min=0)
+		# return x.clip(min=0)
+		return np.maximum(x, 0)
+		#TODO asdfghjkl
 
 	@staticmethod
 	def grad(x):
+		_grad = np.zeros(x.shape)
+		for i in range(x.shape[0]):
+			if x[i, 0] > 0:
+				_grad[i, 0] = 1
+			else:
+				_grad[i, 0] = 0
+		return _grad
 		# return (np.sign(x) + 1) // 2
 		# print(x)
-		return 1.0 * (x > 0)
+		# return 1.0 * (x > 0)
 
 
 class Sigmoid:
@@ -186,8 +217,8 @@ class Softmax:
 
 	@staticmethod
 	def grad(X):
-		return np.multiply(Softmax.value(X), 1 - Softmax.value(X)) / 10
-		# return X / 10
+		# return np.multiply(Softmax.value(X), 1 - Softmax.value(X)) / 10
+		return X / 10
 
 
 if __name__ == '__main__':
@@ -213,15 +244,15 @@ if __name__ == '__main__':
 	for i in range(test_image_set.shape[0]):
 		test_set[i, :] = test_image_set[i].flatten()
 
-	x = training_set[:100, :]
-	y = training_y[:100, :]
+	x = training_set[:300, :]
+	y = training_y[:300, :]
 	# x = training_set
 	# y = training_y
 	num_inputs = x.shape[1]
 	num_labels = 10
 
-	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.5, num_labels, num_inputs)
-	neuralNet.fit(x, y, batch_size=100, epochs=100)
+	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.1, num_labels, num_inputs)
+	neuralNet.fit(x, y, batch_size=20, epochs=100)
 
 	# _x = np.asarray([1, 5, 2, 3, 5, 1]).reshape(-1, 1)
 	# _y = np.asarray([0, 1, 0, 0]).reshape(-1, 1)
