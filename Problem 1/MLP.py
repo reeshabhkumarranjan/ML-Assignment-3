@@ -135,8 +135,15 @@ class NeuralNet:
 		return self.outputs[-1]
 
 	def score(self, x_test, y_test):
-		y_pred = self.predict(x_test)
-		return self.cross_entropy_loss(y_pred, y_test)
+		accuracy_sum = 0
+		for row in range(x_test.shape[0]):
+			x_row = x_test[row, :]
+			y_row = y_test[row, :]
+			y_pred = self.predict(x_row)
+			max_index = np.argmax(y_pred)
+			accuracy_sum += (max_index == y_test[row])
+		return accuracy_sum / y_test.shape[0]
+		# return self.cross_entropy_loss(y_pred, y_test)
 
 	def cross_entropy_loss(self, y_pred, y_act):
 		#TODO asdfghjkl
@@ -244,15 +251,18 @@ if __name__ == '__main__':
 	for i in range(test_image_set.shape[0]):
 		test_set[i, :] = test_image_set[i].flatten()
 
-	x = training_set[:300, :]
-	y = training_y[:300, :]
+	x = training_set[:100, :]
+	y = training_y[:100, :]
 	# x = training_set
 	# y = training_y
 	num_inputs = x.shape[1]
 	num_labels = 10
 
 	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.1, num_labels, num_inputs)
-	neuralNet.fit(x, y, batch_size=20, epochs=100)
+	neuralNet.fit(x, y, batch_size=10, epochs=100)
+	x = training_set[100:200, :]
+	y = training_y[100:200, :]
+	print(neuralNet.score(x, y))
 
 	# _x = np.asarray([1, 5, 2, 3, 5, 1]).reshape(-1, 1)
 	# _y = np.asarray([0, 1, 0, 0]).reshape(-1, 1)
