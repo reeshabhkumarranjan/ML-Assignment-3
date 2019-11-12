@@ -8,6 +8,7 @@ class NeuralNet:
 	activation_function = None
 	learning_rate = None
 	weights = None
+	weight_deltas = None
 	outputs = None
 	outputs_derivative = None
 	deltas = None
@@ -21,6 +22,7 @@ class NeuralNet:
 		self.activation_function = activation_function  # activation function to be used (string)
 		self.learning_rate = learning_rate  # learning rate
 		self.weights = [None] * (num_layers - 1)  # it is a list of list of numpy arrays
+		self.weight_deltas = [None] * (num_labels - 1)
 		# the [i][j] index of the data-structure corresponds to weight to the jth node in the
 		# (i + 1)th layer from all the nodes in the ith layer.
 		self.outputs = [None] * (num_layers)  # it is a list of numpy arrays
@@ -37,6 +39,9 @@ class NeuralNet:
 		for layer in range(num_layers - 1):
 			self.weights[layer] = 0.01 * np.random.normal(loc=0, scale=1, size=(self.num_nodes[layer], self.num_nodes[layer + 1]))
 
+		# initialise weight-deltas
+		self.reset_weight_deltas()
+
 		# initialise the bias for each node
 		for layer in range(num_layers):
 			self.biases[layer] = np.zeros((self.num_nodes[layer], 1))
@@ -44,6 +49,10 @@ class NeuralNet:
 		for output in range(len(self.outputs)):
 			self.outputs[output] = np.empty((num_nodes[output], 1))
 			# self.deltas[output] = np.empty((num_nodes[output], 1))
+
+	def reset_weight_deltas(self):
+		for layer in range(self.num_layers - 1):
+			self.weight_deltas[layer] = np.zeros((self.num_nodes[layer], self.num_nodes[layer + 1]))
 
 	def forward_phase(self, input):
 		input = input.reshape(-1, 1)
@@ -59,30 +68,41 @@ class NeuralNet:
 				self.outputs_derivative[layer] = Relu.grad(output)
 			self.outputs[layer] = output
 
-	def backward_phase(self, d):
+	def update_weights(self):
+		for layer in range(self.num_layers -1):
+			self.weights[layer] += self.weight_deltas[layer]
+
+	def backward_phase(self, d, update_weights=False, batch_size=1):
 		"""Call it with layer = 0"""
 
 		d = d.reshape(-1, 1)
 		# calculate deltas for the output layer
 		# self.deltas[-1] = np.multiply(self.outputs_derivative[-1], (d - self.outputs[-1]) / self.outputs[-1].shape[0])
-		self.deltas[-1] = (d - self.outputs[-1]) / self.outputs[-1].shape[0]
+		self.deltas[-1] = -(d - self.outputs[-1]) / self.outputs[-1].shape[0] # TODO remove this
 		#calculate bias for output layer
 		self.biases[-1] -= self.learning_rate * self.deltas[-1]
 		# print(self.deltas[-1])
 		# print()
 
+		if update_weights:
+			self.update_weights()
+			# self.weights -= self.weight_deltas / batch_size
+		self.reset_weight_deltas()
+
 		# calculate deltas for previous layers and update weights
 		for layer in range(self.num_layers - 2, -1, -1):
-			weights_delta = self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
-			self.deltas[layer] = np.multiply(np.dot(self.weights[layer], self.deltas[layer + 1]), self.outputs_derivative[layer])
-			self.weights[layer] -= weights_delta
+			weight_delta = self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
+			self.deltas[layer] = -np.multiply(np.dot(self.weights[layer], self.deltas[layer + 1]), self.outputs_derivative[layer])
+			self.weight_deltas[layer] += weight_delta
+			# self.weights[layer] -= weights_delta
 			# self.biases[layer] -= self.learning_rate * self.deltas[layer]
-			self.biases[layer] -= self.learning_rate * np.sum(self.deltas[layer],axis=0,keepdims=True)
+			self.biases[layer] += self.learning_rate * np.sum(self.deltas[layer],axis=0,keepdims=True) # TODO remove this
 
 
 	def fit(self, x, y, batch_size, epochs):
 		for epoch in range(epochs):
 			print("Running epoch " + str(epoch) + "...")
+			batch_iter = 1
 			for row in range(x.shape[0]):
 				input = x[row, :]
 				d = np.zeros((num_labels, 1))
@@ -91,8 +111,13 @@ class NeuralNet:
 				self.forward_phase(input)
 				if row == x.shape[0] - 1:
 					print(self.cross_entropy_loss(self.get_train_outputs(), d))
-				# self.backward_phase(d)
-				# print(np.concatenate((self.get_train_outputs(), d), axis=1))
+					print(np.concatenate((self.get_train_outputs(), d), axis=1))
+					print()
+				update_weights = False
+				if batch_iter == batch_size:
+					update_weights = True
+					batch_iter = 1
+				self.backward_phase(d, update_weights=update_weights, batch_size=batch_size)
 				# print()
 
 	def predict(self, X):
@@ -195,8 +220,8 @@ if __name__ == '__main__':
 	num_inputs = x.shape[1]
 	num_labels = 10
 
-	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.1, num_labels, num_inputs)
-	neuralNet.fit(x, y, 0, 10)
+	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.5, num_labels, num_inputs)
+	neuralNet.fit(x, y, batch_size=100, epochs=100)
 
 	# _x = np.asarray([1, 5, 2, 3, 5, 1]).reshape(-1, 1)
 	# _y = np.asarray([0, 1, 0, 0]).reshape(-1, 1)
