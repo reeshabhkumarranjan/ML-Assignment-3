@@ -1,0 +1,6 @@
+Do not change directory structure.
+Run the python file in first problem in terminal.
+Second problem's python file must be run on Google Colab.
+I have referred to https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#define-a-convolutional-neural-network for second problem.
+The theory question is attached as pdf.
+Weights are in the weights/ directory and plots are in plots/ directory. Data is in images/ directory.

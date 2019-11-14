@@ -148,6 +148,9 @@ class NeuralNet:
 			# if score_epoch < 0.5:
 			# 	print("Threshold of " + str(0.5) + " reached. Halting.")
 			# 	break
+		# save weights
+		for layer in range(self.num_layers - 1):
+			np.savetxt('weights/weights_' + self.activation_function + '_' + str(layer + 1), self.weights[layer])
 		return accuracy_epochs
 
 	def predict(self, X):
@@ -284,7 +287,7 @@ if __name__ == '__main__':
 
 	activation_custom = ['relu', 'sigmoid', 'linear', 'tanh']
 	epochs_list = [100, 200, 10, 500]
-	activation_sklearn = ['relu', 'sigmoid', 'identity', 'tanh']
+	activation_sklearn = ['relu', 'logistic', 'identity', 'tanh']
 
 	# custom
 
@@ -292,7 +295,7 @@ if __name__ == '__main__':
 		# break
 		print("starting " + activation + "...")
 		neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], activation, 0.1, num_labels=num_labels, num_inputs=num_inputs)
-		accuracy_epochs = neuralNet.fit(x, y, batch_size=100, epochs=epochs_list[i])
+		accuracy_epochs = neuralNet.fit(x, y, batch_size=10, epochs=epochs_list[i])
 		accuracy_test = list(neuralNet.score(x_test, y_test).reshape(-1, ))
 		print("Custom " + activation + " " + str(accuracy_test))
 
@@ -320,3 +323,18 @@ if __name__ == '__main__':
 	# y_pred = clf.predict_proba(x_test)
 	# print(calculate_match_accuracy(y_pred, y_test.reshape(-1, )))
 	# print(y_pred[0].shape)
+
+	for i, activation in enumerate(activation_sklearn):
+		# break
+		print('sklearn ' + activation)
+		if activation != 'identity':
+			clf = MLPClassifier(solver='sgd', activation=activation, alpha=0.1, hidden_layer_sizes=(256, 128, 64), max_iter=500)
+		else:
+			clf = MLPClassifier(activation='identity', alpha=0.1, hidden_layer_sizes=(256, 128, 64), max_iter=500, verbose=True)
+		clf.fit(x, y.reshape(-1, ))
+		score = clf.score(x_test, y_test)
+		print('score: ' + str(score))
+	clf = MLPClassifier(activation='identity', alpha=0.1, hidden_layer_sizes=(256, 128, 64), max_iter=500, verbose=True)
+	clf.fit(x, y.reshape(-1, ))
+	score = clf.score(x_test, y_test)
+	print(score)
