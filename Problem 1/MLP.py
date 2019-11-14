@@ -295,7 +295,7 @@ if __name__ == '__main__':
 		# break
 		print("starting " + activation + "...")
 		neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], activation, 0.1, num_labels=num_labels, num_inputs=num_inputs)
-		accuracy_epochs = neuralNet.fit(x, y, batch_size=10, epochs=epochs_list[i])
+		accuracy_epochs = neuralNet.fit(x, y, batch_size=100, epochs=epochs_list[i])
 		accuracy_test = list(neuralNet.score(x_test, y_test).reshape(-1, ))
 		print("Custom " + activation + " " + str(accuracy_test))
 
