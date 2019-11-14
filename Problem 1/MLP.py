@@ -125,7 +125,7 @@ class NeuralNet:
 		accuracy_epochs = []
 		for epoch in range(epochs):
 			score_epoch = 0
-			print("Running epoch " + str(epoch) + "...")
+			# print("Running epoch " + str(epoch) + "...")
 			batch_iter = 0
 			for row in range(x.shape[0]):
 				batch_iter += 1
@@ -144,7 +144,7 @@ class NeuralNet:
 				self.backward_phase(d, update_weights=update_weights, batch_size=batch_size)
 			score_epoch /= x.shape[0]
 			accuracy_epochs.append(score_epoch)
-			print(score_epoch)
+			# print(score_epoch)
 			# if score_epoch < 0.5:
 			# 	print("Threshold of " + str(0.5) + " reached. Halting.")
 			# 	break
@@ -238,7 +238,7 @@ class Tanh:
 	@staticmethod
 	def grad(x, a=1, b=1):
 		return a * b / np.square(np.cosh(b * x))
-
+		# return 1-np.square(np.tanh(b * x))
 
 class Softmax:
 	@staticmethod
@@ -275,23 +275,24 @@ if __name__ == '__main__':
 	print(x_train.shape)
 	print(y_train.shape)
 
-	x = x_train[:100, :]
-	y = y_train[:100, :]
+	x = x_train[:1000, :]
+	y = y_train[:1000, :]
 	num_inputs = x.shape[1]
 	num_labels = 10
-	x_test = x_test[: 100, :]
-	y_test = y_test[: 100, :]
+	x_test = x_test[: 1000, :]
+	y_test = y_test[: 1000, :]
 
 	activation_custom = ['relu', 'sigmoid', 'linear', 'tanh']
-	batch_sizes = [100, 200, 10, 500]
+	epochs_list = [100, 200, 10, 500]
 	activation_sklearn = ['relu', 'sigmoid', 'identity', 'tanh']
 
 	# custom
 
-	for i, activation in enumerate(activation_custom[2:]):
-		break
+	for i, activation in enumerate(activation_custom):
+		# break
+		print("starting " + activation + "...")
 		neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], activation, 0.1, num_labels=num_labels, num_inputs=num_inputs)
-		accuracy_epochs = neuralNet.fit(x, y, batch_size=batch_sizes[i], epochs=100)
+		accuracy_epochs = neuralNet.fit(x, y, batch_size=100, epochs=epochs_list[i])
 		accuracy_test = list(neuralNet.score(x_test, y_test).reshape(-1, ))
 		print("Custom " + activation + " " + str(accuracy_test))
 
@@ -306,9 +307,9 @@ if __name__ == '__main__':
 		plt.clf()
 		print("custom " + activation + " done")
 
-	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'tanh', 0.1, num_labels, num_inputs)
-	neuralNet.fit(x, y, batch_size=10, epochs=100)
-	print(neuralNet.score(x_test, y_test))
+	# neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'tanh', 0.1, num_labels, num_inputs)
+	# neuralNet.fit(x, y, batch_size=10, epochs=100)
+	# print(neuralNet.score(x_test, y_test))
 
 	# save weights to file
 
