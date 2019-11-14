@@ -224,18 +224,30 @@ if __name__ == '__main__':
 	training_labels = idx2numpy.convert_from_file('images/train-labels.idx1-ubyte')
 	test_images = idx2numpy.convert_from_file('images/t10k-images.idx3-ubyte')
 	test_labels = idx2numpy.convert_from_file('images/t10k-labels.idx1-ubyte')
-	training_y = training_labels.reshape(-1, 1)
-	test_y = test_labels.reshape(-1, 1)
+	y_train = training_labels.reshape(-1, 1)
+	y_test = test_labels.reshape(-1, 1)
 	x_train = np.empty((training_images.shape[0], 784))
 	x_test = np.empty((test_images.shape[0], 784))
 	for i in range(0, training_images.shape[0]):
 		x_train[i, :] = training_images[i, :].flatten()
 	for i in range(test_images.shape[0]):
 		x_test[i, :] = test_images[i, :].flatten()
+
+	# shuffle train
+	shuffle_dataset = np.concatenate((x_train, y_train), axis=1)
+	np.random.shuffle(shuffle_dataset)
+	x_train = shuffle_dataset[:, :-1]
+	y_train = shuffle_dataset[:, -1].reshape(-1, 1)
+
+	print(x_train.shape)
+	print(y_train.shape)
+
 	x = x_train[:1000, :]
-	y = training_y[:1000, :]
+	y = y_train[:1000, :]
 	num_inputs = x.shape[1]
 	num_labels = 10
 	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'linear', 0.1, num_labels, num_inputs)
 	neuralNet.fit(x, y, batch_size=100, epochs=100)
 	print(neuralNet.score(x, y))
+
+	# save weights to file
