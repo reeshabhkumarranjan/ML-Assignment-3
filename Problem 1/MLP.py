@@ -83,10 +83,9 @@ class NeuralNet:
 		self.biases[-1] += self.learning_rate * self.deltas[-1]
 		# print(self.deltas[-1])
 		# print()
-
-		# if update_weights:
-		# 	self.update_weights(batch_size=batch_size)
-		# 	self.reset_weight_deltas()
+		if update_weights:
+			self.update_weights(batch_size=batch_size)
+			self.reset_weight_deltas()
 			# self.weights -= self.weight_deltas / batch_size
 
 		# calculate deltas for previous layers and update weights
@@ -97,7 +96,6 @@ class NeuralNet:
 			# self.weights[layer] -= weights_delta
 			self.biases[layer] += self.learning_rate * self.deltas[layer]
 			# self.biases[layer] += self.learning_rate * np.sum(self.deltas[layer],axis=0,keepdims=True) # TODO remove this
-
 
 	def fit(self, x, y, batch_size, epochs):
 		for epoch in range(epochs):
@@ -120,13 +118,13 @@ class NeuralNet:
 				# 	print(np.concatenate((self.get_train_outputs(), d), axis=1))
 				# 	print()
 				update_weights = False
-				self.backward_phase(d, update_weights=update_weights, batch_size=batch_size)
 				if batch_iter == batch_size:
-					self.update_weights(batch_size)
-					self.reset_weight_deltas()
+					# self.update_weights(batch_size)
+					# self.reset_weight_deltas()
 					update_weights = True
 					batch_iter = 0
-				update_weights = True
+				self.backward_phase(d, update_weights=update_weights, batch_size=batch_size)
+				# update_weights = True
 				# print()
 			print(score_epoch)
 
@@ -147,18 +145,18 @@ class NeuralNet:
 
 	def cross_entropy_loss(self, y_pred, y_act):
 		#TODO asdfghjkl
-		error = 0
-		for i in range(y_pred.shape[0]):
-			# print("y_pred[i, 0] =", y_pred[i, 0])
-			# print("y_act[i, 0] = ", y_act[i, 0])
-			if y_act[i, 0] == 1:
-				# print("if")
-				error -= np.log(y_pred[i, 0])
-			else:
-				# print("else")
-				error -= np.log(1 - y_pred[i, 0])
-		return error
-		# return -(np.sum(np.dot(np.transpose(y_act), np.log(y_pred))) + np.sum(np.dot(np.transpose(1.0 - y_act), np.log(1.0 - y_pred))))
+		# error = 0
+		# for i in range(y_pred.shape[0]):
+		# 	# print("y_pred[i, 0] =", y_pred[i, 0])
+		# 	# print("y_act[i, 0] = ", y_act[i, 0])
+		# 	if y_act[i, 0] == 1:
+		# 		# print("if")
+		# 		error -= np.log(y_pred[i, 0])
+		# 	# else:
+		# 	# 	print("else")
+		# 		# error -= np.log(1 - y_pred[i, 0])
+		# return error
+		return -(np.sum(np.dot(np.transpose(y_act), np.log(y_pred))) + np.sum(np.dot(np.transpose(1.0 - y_act), np.log(1.0 - y_pred))))
 
 	def get_train_outputs(self):
 		return self.outputs[-1]
@@ -167,8 +165,8 @@ class NeuralNet:
 class Relu:
 	@staticmethod
 	def value(x):
-		# return x.clip(min=0)
-		return np.maximum(x, 0)
+		return x.clip(min=0)
+		# return np.maximum(x, 0)
 		#TODO asdfghjkl
 
 	@staticmethod
@@ -260,8 +258,8 @@ if __name__ == '__main__':
 
 	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.1, num_labels, num_inputs)
 	neuralNet.fit(x, y, batch_size=10, epochs=100)
-	x = training_set[100:200, :]
-	y = training_y[100:200, :]
+	# x = training_set[100:200, :]
+	# y = training_y[100:200, :]
 	print(neuralNet.score(x, y))
 
 	# _x = np.asarray([1, 5, 2, 3, 5, 1]).reshape(-1, 1)
