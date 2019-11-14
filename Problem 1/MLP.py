@@ -108,24 +108,13 @@ class NeuralNet:
 				d = np.zeros((num_labels, 1))
 				for i in range(num_labels):
 					d[i, 0] = 1 if i == y[row, 0] else 0
-				# print(d)
-				# print(y[row, 0])
-				# print(input)
 				self.forward_phase(input)
 				score_epoch += self.cross_entropy_loss(self.get_train_outputs(), d)
-				# if row == x.shape[0] - 1:
-				# 	print(self.cross_entropy_loss(self.get_train_outputs(), d))
-				# 	print(np.concatenate((self.get_train_outputs(), d), axis=1))
-				# 	print()
 				update_weights = False
 				if batch_iter == batch_size:
-					# self.update_weights(batch_size)
-					# self.reset_weight_deltas()
 					update_weights = True
 					batch_iter = 0
 				self.backward_phase(d, update_weights=update_weights, batch_size=batch_size)
-				# update_weights = True
-				# print()
 			print(score_epoch)
 
 	def predict(self, X):
@@ -144,18 +133,6 @@ class NeuralNet:
 		# return self.cross_entropy_loss(y_pred, y_test)
 
 	def cross_entropy_loss(self, y_pred, y_act):
-		#TODO asdfghjkl
-		# error = 0
-		# for i in range(y_pred.shape[0]):
-		# 	# print("y_pred[i, 0] =", y_pred[i, 0])
-		# 	# print("y_act[i, 0] = ", y_act[i, 0])
-		# 	if y_act[i, 0] == 1:
-		# 		# print("if")
-		# 		error -= np.log(y_pred[i, 0])
-		# 	# else:
-		# 	# 	print("else")
-		# 		# error -= np.log(1 - y_pred[i, 0])
-		# return error
 		return -(np.sum(np.dot(np.transpose(y_act), np.log(y_pred))) + np.sum(np.dot(np.transpose(1.0 - y_act), np.log(1.0 - y_pred))))
 
 	def get_train_outputs(self):
@@ -166,22 +143,11 @@ class Relu:
 	@staticmethod
 	def value(x):
 		return x.clip(min=0)
-		# return np.maximum(x, 0)
-		#TODO asdfghjkl
 
 	@staticmethod
 	def grad(x):
-		_grad = np.zeros(x.shape)
-		for i in range(x.shape[0]):
-			if x[i, 0] > 0:
-				_grad[i, 0] = 1
-			else:
-				_grad[i, 0] = 0
-		return _grad
-		# return (np.sign(x) + 1) // 2
-		# print(x)
-		# return 1.0 * (x > 0)
-
+		return (np.sign(x) + 1) // 2
+		print(x)
 
 class Sigmoid:
 	@staticmethod
@@ -190,7 +156,6 @@ class Sigmoid:
 
 	@staticmethod
 	def grad(self, x):
-		# print(Relu.value(x))
 		return np.multiply(Sigmoid.value(x), (1 - Sigmoid.value(x)))
 
 
@@ -227,11 +192,7 @@ class Softmax:
 
 
 if __name__ == '__main__':
-	# neuralNet = NeuralNet(5, [6, 2, 3, 4, 5], 'relu', 0.3)
-	# input = np.asarray([8, 5, 2, 3, 1, 7])
-	# neuralNet.forward_phase(input)
-	# d = np.asarray([4, 2, 3, 1, 2])
-	# neuralNet.backward_phase(d=d)
+
 	training_image_set = idx2numpy.convert_from_file('images/train-images.idx3-ubyte')
 	training_label_set = idx2numpy.convert_from_file('images/train-labels.idx1-ubyte')
 	test_image_set = idx2numpy.convert_from_file('images/t10k-images.idx3-ubyte')
@@ -251,22 +212,10 @@ if __name__ == '__main__':
 
 	x = training_set[:100, :]
 	y = training_y[:100, :]
-	# x = training_set
-	# y = training_y
+
 	num_inputs = x.shape[1]
 	num_labels = 10
 
 	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'relu', 0.1, num_labels, num_inputs)
 	neuralNet.fit(x, y, batch_size=10, epochs=100)
-	# x = training_set[100:200, :]
-	# y = training_y[100:200, :]
 	print(neuralNet.score(x, y))
-
-	# _x = np.asarray([1, 5, 2, 3, 5, 1]).reshape(-1, 1)
-	# _y = np.asarray([0, 1, 0, 0]).reshape(-1, 1)
-	# neuralNet = NeuralNet(5, [6, 3, 4, 3, 4], 'relu', 10000000, 4, 6)
-	# for i in range(3):
-	# 	# print(neuralNet.weights[0])
-	# 	print()
-	# 	neuralNet.forward_phase(_x)
-	# 	neuralNet.backward_phase(_y)
