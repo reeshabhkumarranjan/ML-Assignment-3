@@ -1,6 +1,26 @@
 import idx2numpy as idx2numpy
 import numpy as np
+from sklearn.neural_network import MLPClassifier
+from matplotlib import pyplot as plt
 
+
+def calculate_match_accuracy(y_pred, y_test):
+	accuracy_sum = 0
+	for row in range(y_pred.shape[0]):
+		y_row_pred = y_pred[row].reshape(-1, 1)
+		correct_label = y_test[row]
+		max_index = np.argmax(y_row_pred)
+		accuracy_sum += (max_index == correct_label)
+	return accuracy_sum / y_test.shape[0]
+
+
+# for row in range(x_test.shape[0]):
+# 	x_row = x_test[row, :]
+# 	y_row = y_test[row, :]
+# 	# y_pred = self.predict(x_row)
+# 	max_index = np.argmax(y_pred)
+# 	accuracy_sum += (max_index == y_test[row])
+# return accuracy_sum / y_test.shape[0]
 
 class NeuralNet:
 	num_layers = None
@@ -37,8 +57,7 @@ class NeuralNet:
 
 		# initialise the weights
 		for layer in range(num_layers - 1):
-			self.weights[layer] = 0.01 * np.random.normal(loc=0, scale=1,
-			                                              size=(self.num_nodes[layer], self.num_nodes[layer + 1]))
+			self.weights[layer] = 0.01 * np.random.normal(loc=0, scale=1, size=(self.num_nodes[layer], self.num_nodes[layer + 1]))
 
 		# initialise weight-deltas
 		self.reset_weight_deltas()
@@ -49,7 +68,8 @@ class NeuralNet:
 		# initialize the outputs, deltas to empty
 		for output in range(len(self.outputs)):
 			self.outputs[output] = np.empty((num_nodes[output], 1))
-		# self.deltas[output] = np.empty((num_nodes[output], 1))
+
+	# self.deltas[output] = np.empty((num_nodes[output], 1))
 
 	def reset_weight_deltas(self):
 		for layer in range(self.num_layers - 1):
@@ -93,13 +113,16 @@ class NeuralNet:
 		# calculate deltas for previous layers and update weights
 		for layer in range(self.num_layers - 2, -1, -1):
 			weight_delta = self.learning_rate * np.dot(self.outputs[layer], np.transpose(self.deltas[layer + 1]))
-			self.deltas[layer] = np.multiply(np.dot(self.weights[layer], self.deltas[layer + 1]), self.outputs_derivative[layer])
+			self.deltas[layer] = np.multiply(np.dot(self.weights[layer], self.deltas[layer + 1]),
+			                                 self.outputs_derivative[layer])
 			self.weight_deltas[layer] += weight_delta
 			# self.weights[layer] -= weights_delta
 			self.biases[layer] += self.learning_rate * self.deltas[layer]
-		# self.biases[layer] += self.learning_rate * np.sum(self.deltas[layer],axis=0,keepdims=True) # TODO remove this
+
+	# self.biases[layer] += self.learning_rate * np.sum(self.deltas[layer],axis=0,keepdims=True) # TODO remove this
 
 	def fit(self, x, y, batch_size, epochs):
+		accuracy_epochs = []
 		for epoch in range(epochs):
 			score_epoch = 0
 			print("Running epoch " + str(epoch) + "...")
@@ -116,9 +139,16 @@ class NeuralNet:
 				if batch_iter == batch_size:
 					update_weights = True
 					batch_iter = 0
+					# print(np.concatenate((self.get_train_outputs(), d), axis=1))
+					# print()
 				self.backward_phase(d, update_weights=update_weights, batch_size=batch_size)
 			score_epoch /= x.shape[0]
+			accuracy_epochs.append(score_epoch)
 			print(score_epoch)
+			# if score_epoch < 0.5:
+			# 	print("Threshold of " + str(0.5) + " reached. Halting.")
+			# 	break
+		return accuracy_epochs
 
 	def predict(self, X):
 		self.forward_phase(X)
@@ -143,6 +173,7 @@ class NeuralNet:
 	def get_train_outputs(self):
 		return self.outputs[-1]
 
+
 class Activation:
 	@staticmethod
 	def value(x, activation_function):
@@ -166,6 +197,7 @@ class Activation:
 		elif activation_function == 'sigmoid':
 			return Sigmoid.grad(x)
 
+
 class Relu:
 	@staticmethod
 	def value(x):
@@ -184,6 +216,7 @@ class Sigmoid:
 
 	@staticmethod
 	def grad(x):
+		# return np.multiply(Sigmoid.value(x), (1 - Sigmoid.value(x)))
 		return np.multiply(Sigmoid.value(x), (1 - Sigmoid.value(x)))
 
 
@@ -242,12 +275,47 @@ if __name__ == '__main__':
 	print(x_train.shape)
 	print(y_train.shape)
 
-	x = x_train[:1000, :]
-	y = y_train[:1000, :]
+	x = x_train[:100, :]
+	y = y_train[:100, :]
 	num_inputs = x.shape[1]
 	num_labels = 10
-	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'linear', 0.1, num_labels, num_inputs)
-	neuralNet.fit(x, y, batch_size=100, epochs=100)
-	print(neuralNet.score(x, y))
+	x_test = x_test[: 100, :]
+	y_test = y_test[: 100, :]
+
+	activation_custom = ['relu', 'sigmoid', 'linear', 'tanh']
+	batch_sizes = [100, 200, 10, 500]
+	activation_sklearn = ['relu', 'sigmoid', 'identity', 'tanh']
+
+	# custom
+
+	for i, activation in enumerate(activation_custom[2:]):
+		break
+		neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], activation, 0.1, num_labels=num_labels, num_inputs=num_inputs)
+		accuracy_epochs = neuralNet.fit(x, y, batch_size=batch_sizes[i], epochs=100)
+		accuracy_test = list(neuralNet.score(x_test, y_test).reshape(-1, ))
+		print("Custom " + activation + " " + str(accuracy_test))
+
+		# save graphs
+		plt.figure()
+		accuracy_xs = list(range(len(accuracy_epochs)))
+		plt.plot(accuracy_xs, accuracy_epochs)
+		plt.title("Custom " + activation)
+		plt.xlabel("Epochs")
+		plt.ylabel("Training error")
+		plt.savefig('plots/' + 'custom_' + activation + '.png')
+		plt.clf()
+		print("custom " + activation + " done")
+
+	neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'tanh', 0.1, num_labels, num_inputs)
+	neuralNet.fit(x, y, batch_size=10, epochs=100)
+	print(neuralNet.score(x_test, y_test))
 
 	# save weights to file
+
+	# sklearn
+
+	# clf = MLPClassifier(solver='sgd', activation='identity', alpha=0.1, hidden_layer_sizes=(256, 128, 64))
+	# clf.fit(x, y.reshape(-1, ))
+	# y_pred = clf.predict_proba(x_test)
+	# print(calculate_match_accuracy(y_pred, y_test.reshape(-1, )))
+	# print(y_pred[0].shape)
