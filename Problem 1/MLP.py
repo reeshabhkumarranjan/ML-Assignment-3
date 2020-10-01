@@ -13,15 +13,6 @@ def calculate_match_accuracy(y_pred, y_test):
 		accuracy_sum += (max_index == correct_label)
 	return accuracy_sum / y_test.shape[0]
 
-
-# for row in range(x_test.shape[0]):
-# 	x_row = x_test[row, :]
-# 	y_row = y_test[row, :]
-# 	# y_pred = self.predict(x_row)
-# 	max_index = np.argmax(y_pred)
-# 	accuracy_sum += (max_index == y_test[row])
-# return accuracy_sum / y_test.shape[0]
-
 class NeuralNet:
 	num_layers = None
 	num_nodes = None
@@ -65,11 +56,10 @@ class NeuralNet:
 		# initialise the bias for each node
 		for layer in range(num_layers):
 			self.biases[layer] = np.zeros((self.num_nodes[layer], 1))
+			
 		# initialize the outputs, deltas to empty
 		for output in range(len(self.outputs)):
 			self.outputs[output] = np.empty((num_nodes[output], 1))
-
-	# self.deltas[output] = np.empty((num_nodes[output], 1))
 
 	def reset_weight_deltas(self):
 		for layer in range(self.num_layers - 1):
@@ -98,17 +88,14 @@ class NeuralNet:
 
 		d = d.reshape(-1, 1)
 		# calculate deltas for the output layer
-		# self.deltas[-1] = np.multiply(self.outputs_derivative[-1], (d - self.outputs[-1]) / self.outputs[-1].shape[0])
 		self.deltas[-1] = (d - self.outputs[
 			-1]) / 10  # * self.outputs_derivative[-1] #/ self.outputs[-1].shape[0] # TODO remove this
 		# calculate bias for output layer
 		self.biases[-1] += self.learning_rate * self.deltas[-1]
-		# print(self.deltas[-1])
-		# print()
+		
 		if update_weights:
 			self.update_weights(batch_size=batch_size)
 			self.reset_weight_deltas()
-		# self.weights -= self.weight_deltas / batch_size
 
 		# calculate deltas for previous layers and update weights
 		for layer in range(self.num_layers - 2, -1, -1):
@@ -119,13 +106,10 @@ class NeuralNet:
 			# self.weights[layer] -= weights_delta
 			self.biases[layer] += self.learning_rate * self.deltas[layer]
 
-	# self.biases[layer] += self.learning_rate * np.sum(self.deltas[layer],axis=0,keepdims=True) # TODO remove this
-
 	def fit(self, x, y, batch_size, epochs):
 		accuracy_epochs = []
 		for epoch in range(epochs):
 			score_epoch = 0
-			# print("Running epoch " + str(epoch) + "...")
 			batch_iter = 0
 			for row in range(x.shape[0]):
 				batch_iter += 1
@@ -134,20 +118,17 @@ class NeuralNet:
 				for i in range(num_labels):
 					d[i, 0] = 1 if i == y[row, 0] else 0
 				self.forward_phase(input)
+				
 				score_epoch += self.cross_entropy_loss(self.get_train_outputs(), d)
 				update_weights = False
 				if batch_iter == batch_size:
 					update_weights = True
 					batch_iter = 0
-					# print(np.concatenate((self.get_train_outputs(), d), axis=1))
-					# print()
+					
 				self.backward_phase(d, update_weights=update_weights, batch_size=batch_size)
 			score_epoch /= x.shape[0]
 			accuracy_epochs.append(score_epoch)
-			# print(score_epoch)
-			# if score_epoch < 0.5:
-			# 	print("Threshold of " + str(0.5) + " reached. Halting.")
-			# 	break
+
 		# save weights
 		for layer in range(self.num_layers - 1):
 			np.savetxt('weights/weights_' + self.activation_function + '_' + str(layer + 1), self.weights[layer])
@@ -166,8 +147,6 @@ class NeuralNet:
 			max_index = np.argmax(y_pred)
 			accuracy_sum += (max_index == y_test[row])
 		return accuracy_sum / y_test.shape[0]
-
-	# return self.cross_entropy_loss(y_pred, y_test)
 
 	def cross_entropy_loss(self, y_pred, y_act):
 		return -(np.sum(np.dot(np.transpose(y_act), np.log(y_pred))) + np.sum(
@@ -211,7 +190,6 @@ class Relu:
 		return (np.sign(x) + 1) // 2
 		print(x)
 
-
 class Sigmoid:
 	@staticmethod
 	def value(x):
@@ -222,7 +200,6 @@ class Sigmoid:
 		# return np.multiply(Sigmoid.value(x), (1 - Sigmoid.value(x)))
 		return np.multiply(Sigmoid.value(x), (1 - Sigmoid.value(x)))
 
-
 class Linear:
 	@staticmethod
 	def value(x, m=1, c=0):
@@ -232,7 +209,6 @@ class Linear:
 	def grad(x, m=1, c=0):
 		return m
 
-
 class Tanh:
 	@staticmethod
 	def value(x, a=1, b=1):
@@ -241,7 +217,6 @@ class Tanh:
 	@staticmethod
 	def grad(x, a=1, b=1):
 		return a * b / np.square(np.cosh(b * x))
-		# return 1-np.square(np.tanh(b * x))
 
 class Softmax:
 	@staticmethod
@@ -251,7 +226,6 @@ class Softmax:
 
 	@staticmethod
 	def grad(X):
-		# return np.multiply(Softmax.value(X), 1 - Softmax.value(X)) / 10
 		return X / 10
 
 
@@ -310,10 +284,6 @@ if __name__ == '__main__':
 		plt.clf()
 		print("custom " + activation + " done")
 
-	# neuralNet = NeuralNet(5, [num_inputs, 256, 128, 64, num_labels], 'tanh', 0.1, num_labels, num_inputs)
-	# neuralNet.fit(x, y, batch_size=10, epochs=100)
-	# print(neuralNet.score(x_test, y_test))
-
 	# save weights to file
 
 	# sklearn
@@ -334,6 +304,7 @@ if __name__ == '__main__':
 		clf.fit(x, y.reshape(-1, ))
 		score = clf.score(x_test, y_test)
 		print('score: ' + str(score))
+		
 	clf = MLPClassifier(activation='identity', alpha=0.1, hidden_layer_sizes=(256, 128, 64), max_iter=500, verbose=True)
 	clf.fit(x, y.reshape(-1, ))
 	score = clf.score(x_test, y_test)
